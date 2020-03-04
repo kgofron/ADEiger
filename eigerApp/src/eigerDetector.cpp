@@ -67,7 +67,7 @@ enum data_source
 
 typedef struct
 {
-    string pattern;
+    char pattern[MAX_BUF_SIZE];
     int sequenceId;
     size_t nDataFiles;
     bool saveFiles, parseFiles, removeFiles;
@@ -739,7 +739,9 @@ void eigerDetector::controlTask (void)
         if(dataSource == SOURCE_FILEWRITER || (fwEnable && saveFiles))
         {
             acquisition_t acq;
-            mFWNamePattern->get(acq.pattern);
+            string acq_temp;
+            mFWNamePattern->get(acq_temp);
+            sprintf(acq.pattern, "%s", acq_temp.c_str());
             acq.sequenceId  = sequenceId;
             acq.nDataFiles  = ceil(((double)(numImages*numTriggers))/((double)numImagesPerFile));
             acq.saveFiles   = saveFiles;
@@ -749,7 +751,7 @@ void eigerDetector::controlTask (void)
 
             mPollComplete = false;
             mPollStop = false;
-            printf("%s_sdfasdf\n", acq.pattern.c_str());
+            printf("%s_sdfasdf\n", acq.pattern);
             mPollQueue.send(&acq, sizeof(acq));
             waitPoll = true;
         }
@@ -910,12 +912,12 @@ void eigerDetector::pollTask (void)
             files[i].gid      = mFsGid;
             files[i].perms    = acquisition.filePerms;
 
-            printf("%s_sdfsdfasdfasdf\n", acquisition.pattern.c_str());
+            printf("%s_sdfsdfasdfasdf\n", acquisition.pattern);
             if(isMaster)
-                RestAPI::buildMasterName(acquisition.pattern.c_str(), acquisition.sequenceId,
+                RestAPI::buildMasterName(acquisition.pattern, acquisition.sequenceId,
                         files[i].name, sizeof(files[i].name));
             else
-                RestAPI::buildDataName(i-1+DEFAULT_NR_START, acquisition.pattern.c_str(),
+                RestAPI::buildDataName(i-1+DEFAULT_NR_START, acquisition.pattern,
                         acquisition.sequenceId, files[i].name,
                         sizeof(files[i].name));
         }
