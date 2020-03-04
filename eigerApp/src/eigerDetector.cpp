@@ -56,7 +56,7 @@ using std::string;
 using std::vector;
 using std::map;
 
-static const string DRIVER_VERSION("2-5");
+static const string DRIVER_VERSION("2-6");
 
 enum data_source
 {
@@ -749,6 +749,7 @@ void eigerDetector::controlTask (void)
 
             mPollComplete = false;
             mPollStop = false;
+            printf("%s_sdfasdf\n", acq.pattern.c_str());
             mPollQueue.send(&acq, sizeof(acq));
             waitPoll = true;
         }
@@ -894,8 +895,11 @@ void eigerDetector::pollTask (void)
         totalFiles = acquisition.nDataFiles + 1;
         files = (file_t*) calloc(totalFiles, sizeof(*files));
 
+        printf("A\n");
+
         for(i = 0; i < totalFiles; ++i)
         {
+            printf("B\n");
             bool isMaster = i == 0;
 
             files[i].save     = acquisition.saveFiles;
@@ -906,6 +910,7 @@ void eigerDetector::pollTask (void)
             files[i].gid      = mFsGid;
             files[i].perms    = acquisition.filePerms;
 
+            printf("%s_sdfsdfasdfasdf\n", acquisition.pattern.c_str());
             if(isMaster)
                 RestAPI::buildMasterName(acquisition.pattern.c_str(), acquisition.sequenceId,
                         files[i].name, sizeof(files[i].name));
@@ -947,14 +952,14 @@ void eigerDetector::pollTask (void)
             // (acquisition aborted), so let's retry
             else if(mPollStop)
             {
-                FLOW_ARGS("file=%s not found and pollTask asked to stop",
+                ERR_ARGS("file=%s not found and pollTask asked to stop",
                         curFile->name);
                 ++retries;
             }
         }
 
         // Not acquiring anymore, wait for all pending files to be reaped
-        FLOW("waiting for pending files");
+        ERR("waiting for pending files");
         do
         {
             lock();
@@ -963,7 +968,7 @@ void eigerDetector::pollTask (void)
 
             epicsThreadSleep(0.1);
         }while(pendingFiles);
-        FLOW("done waiting for pending files");
+        ERR("done waiting for pending files");
 
         // All pending files were processed and reaped
         free(files);
@@ -1070,6 +1075,7 @@ void eigerDetector::saveTask (void)
         callParamCallbacks();
         unlock();
 
+        printf("%s\n", fullFileName);
         fd = open(fullFileName, O_WRONLY | O_CREAT, file->perms);
         if(fd < 0)
         {
